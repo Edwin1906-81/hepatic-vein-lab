@@ -18,7 +18,7 @@
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
 .wrap{max-width:1140px;margin:0 auto;padding:20px 16px 32px}
-header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:8px 16px;margin-bottom:14px}
+header{display:flex;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:8px 16px;margin-bottom:14px}
 .eyebrow{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:4px}
 h1{font-size:1.45rem;line-height:1.2;margin:0;color:var(--text);font-weight:700;letter-spacing:-.01em}
 .sub{color:var(--muted);font-size:.86rem;margin-top:4px}
@@ -90,6 +90,9 @@ table{border-collapse:collapse;width:100%;font-size:.83rem;margin-top:10px}
 th,td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top;color:var(--soft)}
 th{color:#fff;font-weight:600;font-size:.76rem;letter-spacing:.06em;text-transform:uppercase}
 .foot{margin-top:14px;text-align:center}
+.logo{display:block;flex:0 0 auto;background:#fff;border-radius:10px;padding:4px 8px;box-shadow:0 4px 18px rgba(0,0,0,.4)}
+.logo img{display:block;height:64px;width:auto}
+@media (max-width:520px){.logo img{height:46px}}
 </style>
 </head>
 <body>
@@ -100,6 +103,7 @@ th{color:#fff;font-weight:600;font-size:.76rem;letter-spacing:.06em;text-transfo
       <h1>Hepatic Vein Waveform: ECG, CVP and Doppler</h1>
       <div class="sub">Live model. Adjust RA pressure, tricuspid regurgitation, rhythm and rate; changes appear on the next beat.</div>
     </div>
+    <a class="logo" href="https://www.pulmonarypocus.com" target="_top" title="Pulmonary POCUS"><img src="https://images.squarespace-cdn.com/content/v1/63013e6bdeceb945f6ef2c81/fa4452e4-b6ce-4a39-8305-3451556f8cf3/Pulmanary+Procus+Design+Final.jpg?format=300w" alt="Pulmonary POCUS logo"></a>
   </header>
 
   <div class="monitor">
