@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hepatic Vein Doppler Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#080b10; --panel:#0f141b; --panel2:#151c25; --line:#212b37; --line2:#2c3846;
+  --text:#ffffff; --soft:#c9d3de; --muted:#8392a3;
+  --accent:#4cc9f0; --accent-ink:#04222d;
+  --ecg:#3ee08f; --cvp:#ff9f43; --hv:#e9eef4;
+  --sys:rgba(96,122,255,0.14); --dia:rgba(255,92,124,0.07);
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1140px;margin:0 auto;padding:20px 16px 32px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:8px 16px;margin-bottom:14px}
+.eyebrow{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:4px}
+h1{font-size:1.45rem;line-height:1.2;margin:0;color:var(--text);font-weight:700;letter-spacing:-.01em}
+.sub{color:var(--muted);font-size:.86rem;margin-top:4px}
+
+/* monitor */
+.monitor{background:#000;border:1px solid var(--line2);border-radius:14px;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,.55),inset 0 0 0 1px rgba(255,255,255,.02)}
+.vitals{display:grid;grid-template-columns:repeat(5,1fr);border-bottom:1px solid var(--line)}
+.vital{padding:10px 14px;border-right:1px solid var(--line)}
+.vital:last-child{border-right:0}
+.vital .k{font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.vital .v{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;font-size:1.45rem;font-weight:700;line-height:1.15;color:#fff}
+.vital .u{font-size:.72rem;color:var(--muted);margin-left:4px;font-family:Inter,sans-serif;font-weight:500}
+.vital.hr .v{color:var(--ecg)} .vital.cvp .v{color:var(--cvp)}
+.grade{display:inline-block;margin-top:3px;padding:2px 9px;border-radius:999px;font-size:.72rem;font-weight:700;font-family:Inter,sans-serif}
+.g-normal{background:rgba(62,224,143,.16);color:#7ff0b5;border:1px solid rgba(62,224,143,.35)}
+.g-mild{background:rgba(255,159,67,.14);color:#ffc48a;border:1px solid rgba(255,159,67,.35)}
+.g-severe{background:rgba(255,77,109,.16);color:#ff9aac;border:1px solid rgba(255,77,109,.4)}
+@media (max-width:760px){.vitals{grid-template-columns:repeat(3,1fr)}.vital:nth-child(3){border-right:0}.vital:nth-child(-n+3){border-bottom:1px solid var(--line)}.vital .v{font-size:1.2rem}}
+.g-mod{background:rgba(255,120,60,.16);color:#ffb08a;border:1px solid rgba(255,120,60,.4)}
+.vexgrade{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:1.45rem;font-weight:700;line-height:1.15}
+.vx{margin-top:12px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 13px}
+.vx-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.vx-head b{color:#fff;font-size:.88rem}
+.vx table{margin-top:0}.vx td{padding:5px 6px;font-size:.82rem}.vx td:last-child{text-align:right}
+.vx .note{font-size:.74rem;color:var(--muted);margin-top:6px}
+canvas{display:block;width:100%;height:clamp(420px,62vw,600px)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:.78rem;color:var(--muted);padding:10px 2px 0}
+.chip{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:-1px;margin-right:6px}
+
+/* cards */
+.grid{display:grid;grid-template-columns:1.1fr 1fr;gap:14px;margin-top:16px}
+@media (max-width:780px){.grid{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+.card h2{font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;margin:0 0 12px;color:var(--text);font-weight:700}
+.row{margin:14px 0}
+.row:first-of-type{margin-top:0}
+.lbl{display:flex;justify-content:space-between;align-items:baseline;font-size:.84rem;color:var(--soft);margin-bottom:6px;font-weight:500}
+.lbl b{color:#fff;font-weight:700;font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.9rem}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:999px;background:linear-gradient(90deg,var(--accent) var(--pct,20%),var(--line2) var(--pct,20%));outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#fff;border:3px solid var(--accent);cursor:pointer;box-shadow:0 0 0 4px rgba(76,201,240,.15)}
+input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:#fff;border:3px solid var(--accent);cursor:pointer}
+.seg{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px}
+.seg button{flex:1;background:transparent;color:var(--soft);border:0;border-radius:7px;padding:7px 4px;font:500 .82rem Inter,sans-serif;cursor:pointer;transition:background .15s,color .15s}
+.seg button:hover{color:#fff;background:rgba(255,255,255,.04)}
+.seg button.on{background:var(--accent);color:var(--accent-ink);font-weight:700}
+.presets{display:flex;flex-wrap:wrap;gap:6px}
+.presets button,.btn{background:var(--panel2);color:var(--soft);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font:500 .8rem Inter,sans-serif;cursor:pointer;transition:all .15s}
+.presets button:hover,.btn:hover{border-color:var(--accent);color:#fff}
+.presets button.on{border-color:var(--accent);color:#fff;background:rgba(76,201,240,.12)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:520px){.two{grid-template-columns:1fr}}
+.toggles{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;font-size:.84rem;color:var(--soft)}
+.toggles label{display:flex;align-items:center;gap:7px;cursor:pointer}
+.toggles input{accent-color:var(--accent);width:15px;height:15px}
+.toggles .btn{margin-left:auto}
+.readout{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px 11px}
+.stat .k{font-size:.72rem;color:var(--muted);font-weight:500}
+.stat .v{font-family:"JetBrains Mono",ui-monospace,monospace;font-weight:700;font-size:1rem;color:#fff}
+.pattern{margin-top:12px;padding:11px 13px;border-radius:10px;background:var(--panel2);border:1px solid var(--line);font-size:.86rem;color:var(--soft)}
+.pattern b{color:#fff}
+ul{margin:10px 0 0;padding-left:18px}
+li{margin:5px 0;font-size:.85rem;color:var(--soft)}
+li::marker{color:var(--accent)}
+details{margin-top:14px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 18px}
+summary{cursor:pointer;color:#fff;font-weight:600;font-size:.9rem}
+.small{font-size:.78rem;color:var(--muted)}
+table{border-collapse:collapse;width:100%;font-size:.83rem;margin-top:10px}
+th,td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top;color:var(--soft)}
+th{color:#fff;font-weight:600;font-size:.76rem;letter-spacing:.06em;text-transform:uppercase}
+.foot{margin-top:14px;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow">Pulmonary POCUS · Doppler Lab</div>
+      <h1>Hepatic Vein Waveform: ECG, CVP and Doppler</h1>
+      <div class="sub">Live model. Adjust RA pressure, tricuspid regurgitation, rhythm and rate; changes appear on the next beat.</div>
+    </div>
+  </header>
+
+  <div class="monitor">
+    <div class="vitals">
+      <div class="vital hr"><div class="k">Heart rate</div><div class="v"><span id="vHR">--</span><span class="u">bpm</span></div></div>
+      <div class="vital cvp"><div class="k">Mean RAP</div><div class="v"><span id="vRAP">--</span><span class="u">mmHg</span></div></div>
+      <div class="vital"><div class="k">HV S/D</div><div class="v" id="vSD">--</div></div>
+      <div class="vital"><div class="k">HV pattern</div><div><span class="grade g-normal" id="vGrade">--</span></div></div>
+      <div class="vital"><div class="k">VExUS grade</div><div class="vexgrade" id="vVex">--</div></div>
+    </div>
+    <canvas id="scope" aria-label="Live ECG, CVP and hepatic vein Doppler waveforms"></canvas>
+  </div>
+  <div class="legend">
+    <span><i class="chip" style="background:rgba(96,122,255,.6)"></i>Systole (tricuspid closed)</span>
+    <span><i class="chip" style="background:rgba(255,92,124,.45)"></i>Diastole (tricuspid open)</span>
+    <span>Doppler: below baseline = flow away from the transducer, toward the IVC and heart (antegrade). Above baseline = flow toward the transducer, away from the heart (retrograde).</span>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Controls</h2>
+      <div class="row presets" id="presets">
+        <button data-p="normal" class="on">Normal</button>
+        <button data-p="elev">Elevated RAP</button>
+        <button data-p="veryhigh">Very high RAP</button>
+        <button data-p="modtr">Moderate TR</button>
+        <button data-p="sevtr">Severe TR</button>
+        <button data-p="af">AF, normal RAP</button>
+        <button data-p="sevtraf">Severe TR + AF</button>
+      </div>
+      <div class="row">
+        <div class="lbl">Mean right atrial pressure <b><span id="rapV">5</span> mmHg</b></div>
+        <input id="rap" type="range" min="2" max="25" step="1" value="5">
+      </div>
+      <div class="row">
+        <div class="lbl">Tricuspid regurgitation</div>
+        <div class="seg" id="trSeg">
+          <button data-v="0" class="on">None</button><button data-v="1">Mild</button><button data-v="2">Moderate</button><button data-v="3">Severe</button>
+        </div>
+      </div>
+      <div class="row">
+        <div class="lbl">Rhythm</div>
+        <div class="seg" id="rhSeg">
+          <button data-v="sinus" class="on">Sinus</button><button data-v="af">Atrial fibrillation</button>
+        </div>
+      </div>
+      <div class="row">
+        <div class="lbl">Heart rate <b><span id="hrV">65</span> bpm</b></div>
+        <input id="hr" type="range" min="40" max="130" step="1" value="65">
+      </div>
+      <div class="row two">
+        <div>
+          <div class="lbl">Playback speed</div>
+          <div class="seg" id="pbSeg">
+            <button data-v="0.25">0.25×</button><button data-v="0.5" class="on">0.5×</button><button data-v="1">1×</button>
+          </div>
+        </div>
+        <div>
+          <div class="lbl">Sweep window</div>
+          <div class="seg" id="spSeg">
+            <button data-v="4500">Wide</button><button data-v="3000" class="on">Normal</button><button data-v="1800">Zoom</button>
+          </div>
+        </div>
+      </div>
+      <div class="row toggles">
+        <label><input type="checkbox" id="shade" checked> Phase shading</label>
+        <label><input type="checkbox" id="labels" checked> Wave labels</label>
+        <label><input type="checkbox" id="modal"> Modal velocity trace</label>
+        <label><input type="checkbox" id="resp"> Spontaneous breathing</label>
+        <button class="btn" id="pause">Pause</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Current beat</h2>
+      <div class="readout" id="readout"></div>
+      <div class="pattern" id="pattern"></div>
+      <div class="vx" id="vx"></div>
+      <ul id="mech"></ul>
+    </div>
+  </div>
+
+  <details>
+    <summary>How to read the waveforms</summary>
+    <table>
+      <tr><th>Event</th><th>CVP</th><th>Hepatic vein Doppler</th></tr>
+      <tr><td>Atrial contraction (after P wave)</td><td>a wave</td><td>a wave: brief retrograde flow, above baseline</td></tr>
+      <tr><td>Early systole: tricuspid closes and bulges</td><td>c wave</td><td>Transition from a to S</td></tr>
+      <tr><td>Systole: atrial relaxation and descent of the tricuspid annulus</td><td>x descent</td><td>S wave: antegrade, below baseline</td></tr>
+      <tr><td>End systole: RA fills against closed tricuspid (end of T wave)</td><td>v wave</td><td>v wave: small, at or slightly above baseline</td></tr>
+      <tr><td>Early diastole: tricuspid opens, RA empties</td><td>y descent</td><td>D wave: antegrade, below baseline</td></tr>
+    </table>
+    <ul>
+      <li>Spectral display: hepatic venous flow is laminar, so the spectrum is a narrow band with a clear window beneath it. The brightest band is the modal velocity (the velocity of most red cells); the outer edge is the peak velocity.</li>
+      <li>Normal pattern: S deeper than D. Doppler velocity tracks the descents: the x descent drives S and the y descent drives D.</li>
+      <li>Rising RA pressure with a stiff, full RA blunts the x descent first, so S shrinks until S &lt; D, while a prominent y descent keeps D large.</li>
+      <li>With systolic reversal, the a wave and reversed S fuse into one large retrograde wave above the baseline, followed by an isolated antegrade D wave.</li>
+      <li>Tricuspid regurgitation fills the RA during systole: the x descent is replaced by a large c-v wave, and S blunts, then reverses (above baseline) when severe.</li>
+      <li>Atrial fibrillation removes the a wave on both tracings and blunts S, so S &lt; D can occur without congestion.</li>
+      <li>VExUS hepatic vein grading: normal S &gt; D; mildly abnormal S &lt; D; severely abnormal S reversal. It is applied only when the IVC is greater than 2 cm and is integrated with portal and intrarenal venous Doppler.</li>
+      <li>Other confounders: cirrhosis can flatten the waveform; positive pressure ventilation and pericardial disease alter the pattern. Always correlate with the ECG.</li>
+    </ul>
+  </details>
+  <details>
+    <summary>References</summary>
+    <ul class="small">
+      <li>McNaughton DA, Abu-Yousef MM. Doppler US of the liver made simple. RadioGraphics. 2011;31(1):161-188.</li>
+      <li>Scheinfeld MH, Bilali A, Koenigsberg M. Understanding the spectral Doppler waveform of the hepatic veins in health and disease. RadioGraphics. 2009;29(7):2081-2098.</li>
+      <li>Beaubien-Souligny W, Rola P, Haycock K, et al. Quantifying systemic congestion with point-of-care ultrasound: development of the venous excess ultrasound grading system. Ultrasound J. 2020;12:16.</li>
+    </ul>
+  </details>
+  <p class="small foot">Schematic educational model. Waveform timing follows the cited physiology; amplitudes and velocities are representative, not patient specific. pulmonarypocus.com</p>
+</div>
+
+<script>
+
+(function(){
+"use strict";
+/* ================= MODEL ================= */
+const S={rap:5,tr:0,af:false,hr:65,resp:false,shade:true,labels:true,modal:false,paused:false,win:3000,speed:0.5};
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const G=(x,m,s)=>Math.exp(-0.5*((x-m)/s)*((x-m)/s));
+function hash(n){const x=Math.sin(n*127.1+311.7)*43758.5453;return x-Math.floor(x);}
+const prFor=hr=>clamp(170-(hr-60)*0.6,120,200);
+const qtFor=rr=>400*Math.sqrt(rr/1000);
+
+let beats=[],cvpPts=[],hvPts=[],nextQ=-7000,tSim=0;
+
+function slope(P,k){
+  const n=P.length;
+  if(k<=0){return (P[1].v-P[0].v)/(P[1].t-P[0].t);}
+  if(k>=n-1){return (P[n-1].v-P[n-2].v)/(P[n-1].t-P[n-2].t);}
+  const h0=P[k].t-P[k-1].t,h1=P[k+1].t-P[k].t;
+  const d0=(P[k].v-P[k-1].v)/h0,d1=(P[k+1].v-P[k].v)/h1;
+  if(d0*d1<=0)return 0;
+  const w1=2*h1+h0,w2=h1+2*h0;
+  return (w1+w2)/(w1/d0+w2/d1);
+}
+function pchip(P,t){
+  const n=P.length;if(!n)return 0;
+  if(t<=P[0].t)return P[0].v;if(t>=P[n-1].t)return P[n-1].v;
+  let lo=0,hi=n-1;while(hi-lo>1){const m=(lo+hi)>>1;if(P[m].t<=t)lo=m;else hi=m;}
+  const i=lo,h=P[i+1].t-P[i].t,m0=slope(P,i),m1=slope(P,i+1);
+  const s=(t-P[i].t)/h,s2=s*s,s3=s2*s;
+  return (2*s3-3*s2+1)*P[i].v+(s3-2*s2+s)*h*m0+(-2*s3+3*s2)*P[i+1].v+(s3-s2)*h*m1;
+}
+function appendPts(arr,pts){for(const p of pts){if(!arr.length||p.t>arr[arr.length-1].t+15)arr.push(p);}}
+
+function makeBeat(q){
+  const p={rap:S.rap,tr:S.tr,af:S.af,hr:S.hr};
+  let rr=60000/p.hr; if(p.af) rr*=0.72+Math.random()*0.56;
+  const PR=prFor(p.hr),QTe=qtFor(rr)-40,tvO=QTe+30,g=p.tr;
+  const yDur=Math.min(140,0.18*rr),nextStart=rr-PR-20;
+  const comp=1+Math.max(0,p.rap-6)*0.04;          /* stiffer, fuller RA: larger excursions */
+  const r=clamp((p.rap-6)/14,0,1);                 /* congestion fraction */
+  const vEx=[0,2,6,12][g]*(0.8+0.2*comp);          /* regurgitant c-v wave height */
+  const yBoost=1+Math.max(0,p.rap-10)*0.05;        /* prominent y with high filling pressure */
+  const L=[];
+  /* ---- CVP key points (ms relative to R peak) ---- */
+  const c=[[-PR-20,0]];
+  let aAbs=null;
+  if(!p.af){c.push([-PR+100,3.2*comp]);L.push(['cvp',-PR+100,'a',1]);}
+  c.push([15,(p.af?0.4:1.3)*comp]);
+  c.push([55,(p.af?1.0:1.9)*comp+0.3*vEx]); if(g<2)L.push(['cvp',55,'c',1]);
+  const xT=0.6*QTe,xV=-(p.af?0.8:1.6)*comp*(1-g/3)+0.55*vEx;
+  c.push([xT,xV]); if(g<2)L.push(['cvp',xT,'x',-1]);
+  const vV=2.6*comp+vEx; c.push([tvO-5,vV]); L.push(['cvp',tvO-5,g>=2?'cv':'v',1]);
+  const yV=-(1.0*comp+0.25*vEx)*yBoost; c.push([tvO+yDur,yV]); L.push(['cvp',tvO+yDur,'y',-1]);
+  if(nextStart-(tvO+yDur)>120)c.push([(tvO+yDur+nextStart)/2,yV*0.35]);
+  const pts=c.concat([[nextStart,0]]);let area=0;
+  for(let i=1;i<pts.length;i++)area+=(pts[i][0]-pts[i-1][0])*(pts[i][1]+pts[i-1][1])/2;
+  const sh=p.rap-area/(pts[pts.length-1][0]-pts[0][0]);  /* time-averaged CVP = set RAP */
+  if(!p.af)aAbs=3.2*comp+sh;
+  /* ---- Hepatic vein Doppler key points (cm/s, + = toward transducer) ---- */
+  /* antegrade S falls as RA pressure rises; at very high RAP (about 18 mmHg and above) systolic flow reverses */
+  let Sval=-38*(p.af?0.6:1)*[1,0.8,0.55,0][g]+53*Math.pow(clamp((p.rap-6)/14,0,1.4),1.4);
+  if(g===3)Sval=Math.max(Sval,22+8*r);
+  if(Sval>0)Sval=Math.min(Sval,34);
+  const Dmag=(24+8*r)*(1+0.12*g);
+  const aV=p.af?0:12*(1+0.8*r);
+  const dia=-6*(1-0.4*r);
+  const vH=Sval>0?Sval*0.5:3+5*r+[0,1,3][g];
+  const h=[[-PR-20,dia]];
+  const sT=0.55*QTe;
+  if(Sval>0){
+    /* systolic reversal: atrial (a) and systolic reversal fuse into one large retrograde wave with no return to baseline */
+    if(!p.af)h.push([-PR+75,aV]);
+    h.push([10,Math.max(aV*0.85,Sval*0.85)]);
+    h.push([sT,Sval]);L.push(['hv',p.af?sT:(sT-PR+75)/2,p.af?'S reversed':'a + S reversal',1]);
+  }else{
+    if(!p.af){h.push([-PR+75,aV]);L.push(['hv',-PR+75,'a',1]);h.push([10,-1]);}else h.push([10,dia*0.5]);
+    h.push([sT,Sval]);L.push(['hv',sT,'S',-1]);
+  }
+  h.push([tvO-10,vH]);if(Sval<=0)L.push(['hv',tvO-10,'v',1]);
+  const dT=tvO+0.75*yDur+10;h.push([dT,-Dmag]);L.push(['hv',dT,'D',-1]);
+  if(nextStart-dT>120)h.push([(dT+nextStart)/2,dia*1.1]);
+  appendPts(cvpPts,c.map(([t,v])=>({t:q+t,v:v+sh})));
+  appendPts(hvPts,h.map(([t,v])=>({t:q+t,v})));
+  beats.push({q,rr,PR,QTe,tvO,p,Sval,Dmag,aV,labels:L,cvpA:aAbs,cvpV:vV+sh,cvpY:yV+sh,cvpX:g<2?xV+sh:null});
+  return rr;
+}
+function ensure(){
+  let guard=0;
+  while((!cvpPts.length||cvpPts[cvpPts.length-1].t<tSim+200||hvPts[hvPts.length-1].t<tSim+200)&&guard++<50){nextQ+=makeBeat(nextQ);}
+  const cut=tSim-6000;
+  while(beats.length>3&&beats[1].q<cut)beats.shift();
+  while(cvpPts.length>4&&cvpPts[2].t<cut)cvpPts.shift();
+  while(hvPts.length>4&&hvPts[2].t<cut)hvPts.shift();
+}
+function beatIdx(t){let lo=0,hi=beats.length-1,ans=0;while(lo<=hi){const m=(lo+hi)>>1;if(beats[m].q<=t){ans=m;lo=m+1;}else hi=m-1;}return ans;}
+function ecgBeat(b,dt){
+  let v=0;
+  if(!b.p.af)v+=0.14*G(dt,-b.PR+50,24);
+  v+=-0.08*G(dt,-24,7)+1.05*G(dt,0,9)-0.22*G(dt,22,8);
+  const tp=b.QTe-80;v+=0.28*G(dt,tp,dt<tp?48:32);
+  return v;
+}
+function ecgAt(t){
+  const i=beatIdx(t+260);let v=0;
+  for(let k=i-1;k<=i+1;k++)if(k>=0&&k<beats.length)v+=ecgBeat(beats[k],t-beats[k].q);
+  const b=beats[beatIdx(t)];
+  if(b&&b.p.af)v+=0.035*Math.sin(2*Math.PI*t*0.0062)+0.025*Math.sin(2*Math.PI*t*0.0083+1.3)+0.015*Math.sin(2*Math.PI*t*0.0051+2.1);
+  return v;
+}
+const respPhase=t=>S.resp?Math.sin(2*Math.PI*t/4500):0;   /* + = inspiration */
+function cvpAt(t){return pchip(cvpPts,t)-1.5*respPhase(t);}
+function hvAt(t){let v=pchip(hvPts,t);if(v<0)v*=1+0.25*respPhase(t);return v;}
+
+
+/* ---- VExUS (Beaubien-Souligny 2020): components estimated from the modeled RAP and TR ---- */
+function vexus(p,Sval,Dmag){
+  const ivc=1.2+0.08*p.rap;                                        /* illustrative IVC diameter, cm */
+  const hv=Sval>0?2:(-Sval<Dmag?1:0);
+  const pf=clamp(10+(p.rap-5)*3.2+[0,5,12,20][p.tr],5,100);       /* portal pulsatility fraction, % */
+  const pv=pf>=50?2:(pf>=30?1:0);
+  const rs=p.rap+3*p.tr,rv=rs>=18?2:(rs>=10?1:0);                  /* intrarenal venous pattern */
+  const severe=[hv,pv,rv].filter(x=>x===2).length;
+  const grade=ivc<2?0:(severe===0?1:(severe===1?2:3));
+  return {ivc,hv,pf,pv,rv,grade};
+}
+/* ================= DRAWING ================= */
+const cv=document.getElementById('scope'),ctx=cv.getContext('2d');
+let W=0,H=0,dpr=1,cmax=30;
+const FONT='Inter,-apple-system,Segoe UI,Roboto,Arial,sans-serif';
+function resize(){dpr=Math.min(2,window.devicePixelRatio||1);W=cv.clientWidth;H=cv.clientHeight;cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);}
+window.addEventListener('resize',resize);
+const cssCache={};function css(n){return cssCache[n]||(cssCache[n]=getComputedStyle(document.documentElement).getPropertyValue(n).trim());}
+
+function txt(s,x,y,col,size,align,weight){ctx.font=`${weight||600} ${size||12}px ${FONT}`;ctx.textAlign=align||'left';ctx.lineJoin='round';ctx.lineWidth=4;ctx.strokeStyle='rgba(0,0,0,.9)';ctx.strokeText(s,x,y);ctx.fillStyle=col;ctx.fillText(s,x,y);}
+function chanLabel(name,unit,color,y){
+  ctx.fillStyle=color;ctx.beginPath();ctx.arc(14,y-4,3.5,0,Math.PI*2);ctx.fill();
+  txt(name,23,y,'#ffffff',12,'left',700);
+  if(unit){const w=ctx.measureText(name).width;txt(unit,27+w,y,'#8392a3',11,'left',500);}
+}
+function trace(xs,ys,color,width){
+  ctx.save();ctx.strokeStyle=color;ctx.lineWidth=width;ctx.lineJoin='round';ctx.lineCap='round';
+  ctx.shadowColor=color;ctx.shadowBlur=8;ctx.beginPath();
+  for(let i=0;i<xs.length;i++){i?ctx.lineTo(xs[i],ys[i]):ctx.moveTo(xs[i],ys[i]);}
+  ctx.stroke();ctx.restore();
+}
+
+const MODAL=0.8;const sq=x=>x*x;
+const SPEC=new Float32Array(256);for(let k=0;k<256;k++){const f=k/228;let I=0.07+1.05*Math.exp(-sq((f-MODAL)/0.13))+0.3*Math.exp(-sq((f-0.97)/0.05));if(f>1)I*=Math.exp(-sq((f-1)/0.03));SPEC[k]=I;}let specCv=null,specImg=null;
+const smooth=(a,b,x)=>{const k=clamp((x-a)/(b-a),0,1);return k*k*(3-2*k);};
+function h2(i,j){const x=Math.sin(i*127.1+j*311.7)*43758.5453;return x-Math.floor(x);}
+function vnoise(x,y){const i=Math.floor(x),j=Math.floor(y),fx=x-i,fy=y-j,sx=fx*fx*(3-2*fx),sy=fy*fy*(3-2*fy);
+  const a=h2(i,j),b=h2(i+1,j),c=h2(i,j+1),d=h2(i+1,j+1);return a+(b-a)*sx+(c-a)*sy+(a-b-c+d)*sx*sy;}
+function draw(){
+  const L=W<500?38:48,R=W-10,pw=R-L,win=S.win,t0=tSim-win;
+  const xOf=t=>L+(t-t0)/win*pw;
+  const eT=0,eH=H*0.23,cT=eH,cH=H*0.35,hT=cT+cH,hH=H-hT;
+  ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
+
+  /* phase shading */
+  if(S.shade){
+    ctx.fillStyle=css('--dia');ctx.fillRect(L,0,pw,H);
+    ctx.fillStyle=css('--sys');
+    for(const b of beats){const a=xOf(b.q+20),z=xOf(b.q+b.tvO);if(z<L||a>R)continue;ctx.fillRect(Math.max(a,L),0,Math.min(z,R)-Math.max(a,L),H);}
+  }
+  /* moving time grid (200 ms major, 40 ms minor) */
+  for(let t=Math.ceil(t0/40)*40;t<=tSim;t+=40){
+    const x=xOf(t),major=Math.round(t)%200===0;
+    ctx.strokeStyle=major?'rgba(255,255,255,.07)':'rgba(255,255,255,.025)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(Math.round(x)+.5,0);ctx.lineTo(Math.round(x)+.5,H);ctx.stroke();
+  }
+  /* channel separators */
+  ctx.strokeStyle='#1d2631';ctx.lineWidth=1;
+  [cT,hT].forEach(y=>{ctx.beginPath();ctx.moveTo(0,Math.round(y)+.5);ctx.lineTo(W,Math.round(y)+.5);ctx.stroke();});
+  /* left gutter */
+  ctx.fillStyle='rgba(0,0,0,.55)';ctx.fillRect(0,0,L,H);
+
+  /* phase captions */
+  if(S.shade&&pw>380){
+    for(const b of beats){
+      const a=xOf(b.q+20),z=xOf(b.q+b.tvO),z2=xOf(b.q+b.rr+20);
+      if(z-a>70&&a>L+4&&z<R)txt('SYSTOLE',(a+z)/2,eT+16,'rgba(170,185,255,.75)',9.5,'center',700);
+      if(z2-z>80&&z>L+4&&z2<R)txt('DIASTOLE',(z+z2)/2,eT+16,'rgba(255,170,185,.6)',9.5,'center',700);
+    }
+  }
+
+  /* ---- ECG ---- */
+  const eMid=eT+eH*0.64,eSc=eH*0.5,xs=[],ys=[];
+  for(let x=0;x<=pw;x++){const t=t0+x/pw*win;xs.push(L+x);ys.push(eMid-ecgAt(t)*eSc);}
+  trace(xs,ys,css('--ecg'),1.8);
+  chanLabel('ECG','II',css('--ecg'),eT+eH-10);
+
+  /* ---- CVP ---- */
+  let vis=0;const cvv=new Float32Array(pw+1);
+  for(let x=0;x<=pw;x++){const v=cvpAt(t0+x/pw*win);cvv[x]=v;if(v>vis)vis=v;}
+  const target=Math.max(30,Math.ceil((vis+5)/10)*10);
+  if(target>cmax)cmax=target;else if(target<cmax&&vis<cmax-14)cmax=target;
+  const cTop=cT+22,cBot=cT+cH-10,yC=v=>cBot-(clamp(v,-2,cmax)/cmax)*(cBot-cTop);
+  ctx.font=`500 10.5px ${FONT}`;ctx.textAlign='right';
+  for(let v=0;v<=cmax;v+=10){const y=Math.round(yC(v))+.5;ctx.strokeStyle='rgba(255,255,255,.06)';ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(R,y);ctx.stroke();ctx.fillStyle='#6f7e8f';ctx.fillText(v,L-7,y+3.5);}
+  ctx.setLineDash([3,5]);ctx.strokeStyle='rgba(255,159,67,.45)';ctx.lineWidth=1;ctx.beginPath();const ym=Math.round(yC(S.rap))+.5;ctx.moveTo(L,ym);ctx.lineTo(R,ym);ctx.stroke();ctx.setLineDash([]);
+  txt('mean',R-4,ym-5,'rgba(255,190,130,.8)',9.5,'right',600);
+  const cx=[],cy=[];for(let x=0;x<=pw;x++){cx.push(L+x);cy.push(yC(cvv[x]));}
+  trace(cx,cy,css('--cvp'),2.2);
+  chanLabel('CVP','mmHg',css('--cvp'),cT+16);
+
+  /* ---- Hepatic vein spectral Doppler (per-pixel grayscale spectrum) ---- */
+  const vMax=50,vMin=-60,hTop=hT+24,hBot=H-8,yH=v=>hTop+(vMax-clamp(v,vMin,vMax))/(vMax-vMin)*(hBot-hTop),y0=yH(0);
+  ctx.textAlign='right';ctx.font=`500 10.5px ${FONT}`;
+  for(let v=-60;v<=40;v+=20){const y=Math.round(yH(v))+.5;ctx.strokeStyle='rgba(255,255,255,.05)';ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(R,y);ctx.stroke();ctx.fillStyle='#6f7e8f';ctx.fillText(v,L-7,y+3.5);}
+  const sh=Math.max(1,Math.round(hBot-hTop)),sw=pw+1;
+  if(!specCv||specCv.width!==sw||specCv.height!==sh){specCv=document.createElement('canvas');specCv.width=sw;specCv.height=sh;specImg=specCv.getContext('2d').createImageData(sw,sh);}
+  const D=specImg.data,vpp=(vMax-vMin)/sh,env=new Float32Array(sw);
+  for(let x=0;x<sw;x++)env[x]=hvAt(t0+x/pw*win);
+  /* light temporal smoothing of the envelope, as the scanner's spectral averaging does */
+  const envS=new Float32Array(sw);
+  for(let x=0;x<sw;x++){let a=0,w=0;for(let k=-2;k<=2;k++){const j=x+k;if(j<0||j>=sw)continue;const wk=3-Math.abs(k);a+=env[j]*wk;w+=wk;}envS[x]=a/w;}
+  for(let x=0;x<sw;x++){
+    const v=envS[x],av=Math.abs(v),t=t0+x/pw*win,tc=t/9;           /* speckle cell 9 ms */
+    const wall=smooth(1.5,5,av);                                      /* soft wall filter */
+    for(let y=0;y<sh;y++){
+      const u=vMax-(y+0.5)*vpp,i4=(y*sw+x)*4;let I=0;
+      if(wall>0&&u*v>0){
+        const f=Math.abs(u)/av;
+        if(f<1.12){
+          /* laminar spectrum: dark spectral window near baseline, brightest at the modal velocity, crisp fall-off at the envelope */
+          I=SPEC[Math.min(255,(f*228)|0)];
+          const n=vnoise(tc,Math.abs(u)/0.8);                         /* fine speckle locked to time */
+          I*=wall*(0.55+0.7*n);
+        }
+      }
+      I+=0.025*vnoise(tc*1.7+50,y*0.35);                              /* faint background noise */
+      const g=Math.min(255,255*Math.pow(Math.min(1,I),0.85));
+      D[i4]=g*0.96;D[i4+1]=g*0.98;D[i4+2]=g;D[i4+3]=255;
+    }
+  }
+  specCv.getContext('2d').putImageData(specImg,0,0);
+  ctx.save();ctx.globalCompositeOperation='lighter';ctx.drawImage(specCv,L,hTop);ctx.restore();
+  if(S.modal){
+    ctx.save();ctx.strokeStyle='rgba(76,201,240,.95)';ctx.lineWidth=1.6;ctx.setLineDash([]);ctx.beginPath();let pen=false;
+    for(let x=0;x<sw;x++){const v=envS[x];if(Math.abs(v)<5){pen=false;continue;}const y=yH(v*MODAL);pen?ctx.lineTo(L+x,y):ctx.moveTo(L+x,y);pen=true;}
+    ctx.stroke();ctx.restore();
+  }
+  ctx.strokeStyle='rgba(76,201,240,.9)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(L,Math.round(y0)+.5);ctx.lineTo(R,Math.round(y0)+.5);ctx.stroke();
+  chanLabel('Hepatic vein PW','cm/s',css('--hv'),hT+16);
+  txt('▲ Above baseline: toward transducer, away from heart',R-4,hT+16,'#c9d3de',10.5,'right',600);
+  txt('▼ Below baseline: away from transducer, toward IVC and heart',R-4,hBot-4,'#c9d3de',10.5,'right',600);
+  if(S.modal)txt('— modal velocity',R-4,hT+30,'rgba(76,201,240,1)',10,'right',600);
+
+  /* ---- wave labels ---- */
+  if(S.labels){
+    for(const b of beats){
+      for(const [ch,tr,lab,dir] of b.labels){
+        const t=b.q+tr,x=xOf(t);if(x<L+8||x>R-8)continue;
+        if(ch==='cvp'){const y=yC(cvpAt(t))-dir*12+(dir<0?8:0);txt(lab,x,y,'#ffffff',13,'center',700);}
+        else{let vv=hvAt(t);if(/rever/.test(lab)){for(let k=-120;k<=120;k+=20)vv=Math.max(vv,hvAt(t+k));}const y=yH(vv)-dir*11+(dir<0?10:0);txt(lab,x,y,/rever/.test(lab)?'#ff8fa3':'#ffffff',13,'center',700);}
+      }
+    }
+  }
+  /* time scale */
+  const sbw=200/win*pw;ctx.fillStyle='#8392a3';ctx.fillRect(R-6-sbw,eT+eH-12,sbw,2);
+  txt('200 ms',R-6-sbw/2,eT+eH-17,'#8392a3',9.5,'center',500);
+  if(S.paused)txt('❚❚ PAUSED',W/2,eT+eH/2,'#ffffff',13,'center',700);
+}
+
+/* ================= READOUT ================= */
+const $=id=>document.getElementById(id);
+const roEl=$('readout'),patEl=$('pattern'),mechEl=$('mech');
+let lastKey='';
+function stat(k,v){return `<div class="stat"><div class="k">${k}</div><div class="v">${v}</div></div>`;}
+function updateReadout(){
+  let b=null;for(let i=beats.length-1;i>=0;i--)if(beats[i].q<=tSim-80){b=beats[i];break;}
+  if(!b)return;
+  const p=b.p,key=[p.rap,p.tr,p.af,Math.round(p.hr/5),S.resp].join('|');
+  const sTxt=b.Sval>0?`+${b.Sval.toFixed(0)} rev`:`${(-b.Sval).toFixed(0)}`;
+  const ratio=b.Sval>0?'reversed':((-b.Sval)/b.Dmag).toFixed(2);
+  roEl.innerHTML=
+    stat(`CVP a / ${p.tr>=2?'cv':'v'} wave`,`${b.cvpA!=null?b.cvpA.toFixed(0):'absent'} / ${b.cvpV.toFixed(0)} <small>mmHg</small>`)+
+    stat('CVP y trough',`${b.cvpY.toFixed(0)} <small>mmHg</small>`)+
+    stat('HV S peak (max)',`${sTxt} <small>cm/s</small>`)+
+    stat('HV D peak (max)',`${b.Dmag.toFixed(0)} <small>cm/s</small>`)+
+    stat('S/D ratio',ratio)+
+    stat('Modal S / D',`${b.Sval>0?'+'+(b.Sval*MODAL).toFixed(0):(-b.Sval*MODAL).toFixed(0)} / ${(b.Dmag*MODAL).toFixed(0)} <small>cm/s</small>`)+
+    stat('HV a reversal',p.af?'absent':`${b.aV.toFixed(0)} <small>cm/s</small>`);
+  $('vHR').textContent=Math.round(60000/b.rr);
+  $('vRAP').textContent=p.rap;
+  $('vSD').textContent=ratio;
+  let hv,cls;
+  if(b.Sval>0){hv='Systolic flow reversal';cls='severe';}
+  else if(-b.Sval<b.Dmag){hv='S < D (blunted systolic flow)';cls='mild';}
+  else{hv='S > D';cls='normal';}
+  const gradeTxt={normal:'Normal',mild:'Mildly abnormal',severe:'Severely abnormal'}[cls];
+  const gEl=$('vGrade');gEl.textContent=gradeTxt;gEl.className='grade g-'+cls;
+  const V=vexus(p,b.Sval,b.Dmag),gcol=['#7ff0b5','#ffc48a','#ffb08a','#ff9aac'][V.grade];
+  const vv=$('vVex');vv.textContent=V.grade;vv.style.color=gcol;
+  const pill=s=>`<span class="grade g-${['normal','mild','severe'][s]}">${['Normal','Mild','Severe'][s]}</span>`;
+  $('vx').innerHTML=`<div class="vx-head"><b>VExUS</b><span class="grade ${['g-normal','g-mild','g-mod','g-severe'][V.grade]}">Grade ${V.grade}: ${['No congestion','Mild congestion','Moderate congestion','Severe congestion'][V.grade]}</span></div>
+  <table>
+  <tr><td>IVC diameter</td><td>${V.ivc.toFixed(1)} cm</td><td>${V.ivc<2?'<span class="grade g-normal">&lt; 2 cm</span>':'<span class="grade g-mild">&ge; 2 cm</span>'}</td></tr>
+  <tr><td>Hepatic vein</td><td>${['S &gt; D','S &lt; D','S reversal'][V.hv]}</td><td>${pill(V.hv)}</td></tr>
+  <tr><td>Portal vein</td><td>Pulsatility ${V.pf.toFixed(0)}%</td><td>${pill(V.pv)}</td></tr>
+  <tr><td>Intrarenal vein</td><td>${['Continuous','Biphasic S and D','Monophasic D only'][V.rv]}</td><td>${pill(V.rv)}</td></tr>
+  </table>
+  <div class="note">${V.ivc<2?'IVC &lt; 2 cm: grade 0, Doppler patterns are not graded. ':''}Hepatic vein is modeled live; IVC, portal and intrarenal values are estimated from the same RAP and TR settings for teaching. Grade 1: IVC &ge; 2 cm with normal or mild patterns. Grade 2: one severe pattern. Grade 3: two or more severe patterns.</div>`;
+  if(key===lastKey)return;lastKey=key;
+  let cvpPat;
+  if(p.tr>=2)cvpPat='Large c-v wave replacing the x descent, steep y descent ("ventricularized" RA pressure)';
+  else if(p.af)cvpPat='No a wave, attenuated x descent, v and y preserved';
+  else if(p.rap>=12)cvpPat='Elevated mean with tall a and v waves and a prominent y descent';
+  else cvpPat='Normal a, c, x, v, y morphology';
+  patEl.innerHTML=`<b>Hepatic vein:</b> ${hv} <span class="grade g-${cls}">${gradeTxt}</span><br><b>CVP:</b> ${cvpPat}`;
+  const m=[];
+  if(p.rap>=10&&p.tr<2)m.push('High RA pressure with a full, less compliant RA blunts the x descent, so systolic forward flow (S) falls while early diastolic emptying (y descent, D) is preserved.');
+  if(b.Sval>0&&p.tr<3)m.push('Very high RA pressure: the RA is so full and noncompliant that systolic inflow stops and reverses. Clinically this usually accompanies RV failure with functional TR.');
+  if(p.tr===1)m.push('Mild TR adds a small systolic volume to the RA: the x descent is shallower and S is mildly blunted.');
+  if(p.tr===2)m.push('Moderate TR: regurgitant volume fills the RA during systole, the c and v waves fuse, and S becomes smaller than D.');
+  if(p.tr===3)m.push('Severe TR: the regurgitant jet drives blood back into the hepatic veins during systole, so S reverses above the baseline and is followed by a deep D wave.');
+  if(p.af)m.push('AF: no organized atrial contraction, so no a wave on CVP and no atrial reversal on Doppler. S is typically blunted even without congestion, which limits the S/D criterion.');
+  if(p.rap<10&&p.tr===0&&!p.af)m.push('Normal: the x descent produces the dominant antegrade S wave; the a wave is the only normal retrograde component.');
+  if(S.resp)m.push('Spontaneous inspiration lowers RA pressure and augments antegrade S and D velocities.');
+  m.push('VExUS: apply hepatic vein grading only with IVC greater than 2 cm, and integrate with portal and intrarenal Doppler.');
+  mechEl.innerHTML=m.map(x=>`<li>${x}</li>`).join('');
+}
+
+/* ================= UI ================= */
+function fillRange(el){const pct=(el.value-el.min)/(el.max-el.min)*100;el.style.setProperty('--pct',pct+'%');}
+function setSeg(id,val){document.querySelectorAll('#'+id+' button').forEach(b=>b.classList.toggle('on',b.dataset.v==String(val)));}
+function clearPreset(){document.querySelectorAll('#presets button').forEach(b=>b.classList.remove('on'));}
+$('rap').oninput=e=>{S.rap=+e.target.value;$('rapV').textContent=S.rap;fillRange(e.target);clearPreset();};
+$('hr').oninput=e=>{S.hr=+e.target.value;$('hrV').textContent=S.hr;fillRange(e.target);clearPreset();};
+document.querySelectorAll('#trSeg button').forEach(b=>b.onclick=()=>{S.tr=+b.dataset.v;setSeg('trSeg',S.tr);clearPreset();});
+document.querySelectorAll('#rhSeg button').forEach(b=>b.onclick=()=>{S.af=b.dataset.v==='af';setSeg('rhSeg',b.dataset.v);clearPreset();});
+document.querySelectorAll('#spSeg button').forEach(b=>b.onclick=()=>{S.win=+b.dataset.v;setSeg('spSeg',b.dataset.v);});
+document.querySelectorAll('#pbSeg button').forEach(b=>b.onclick=()=>{S.speed=+b.dataset.v;setSeg('pbSeg',b.dataset.v);});
+$('shade').onchange=e=>S.shade=e.target.checked;
+$('labels').onchange=e=>S.labels=e.target.checked;
+$('modal').onchange=e=>S.modal=e.target.checked;
+$('resp').onchange=e=>{S.resp=e.target.checked;lastKey='';};
+$('pause').onclick=()=>{S.paused=!S.paused;$('pause').textContent=S.paused?'Resume':'Pause';};
+const PRE={normal:[5,0,false,65],elev:[14,0,false,75],veryhigh:[20,0,false,80],modtr:[12,2,false,70],sevtr:[16,3,false,75],af:[6,0,true,75],sevtraf:[17,3,true,85]};
+document.querySelectorAll('#presets button').forEach(b=>b.onclick=()=>{
+  const [rap,tr,af,hr]=PRE[b.dataset.p];S.rap=rap;S.tr=tr;S.af=af;S.hr=hr;
+  $('rap').value=rap;$('rapV').textContent=rap;$('hr').value=hr;$('hrV').textContent=hr;
+  fillRange($('rap'));fillRange($('hr'));
+  setSeg('trSeg',tr);setSeg('rhSeg',af?'af':'sinus');
+  clearPreset();b.classList.add('on');
+});
+fillRange($('rap'));fillRange($('hr'));
+
+/* ================= LOOP ================= */
+let last=null,roTimer=0;
+function frame(ts){
+  if(last==null)last=ts;const dt=Math.min(60,ts-last);last=ts;
+  if(!S.paused)tSim+=dt*S.speed;
+  ensure();if(W!==cv.clientWidth||H!==cv.clientHeight)resize();
+  draw();
+  roTimer+=dt;if(roTimer>250){roTimer=0;updateReadout();}
+  requestAnimationFrame(frame);
+}
+resize();ensure();requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
